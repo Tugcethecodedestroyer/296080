@@ -1,0 +1,28 @@
+using UnityEngine;
+
+public class CameraMovement : MonoBehaviour
+{
+    // Kamera hangi GameObject'i takip etsin? (Karakter veya başka bir nesne)
+    public Transform target;
+
+    // Kameranın takip hızı (lerping ile yumuşak geçiş)
+    public float smoothSpeed = 0.125f;
+
+    // Hedef nesneye göre konum ofseti
+    public Vector3 offset;
+
+    void LateUpdate()
+    {
+        // Eğer hedef atanmamışsa, kodu çalıştırma
+        if (target == null) return;
+
+        // Karakterin (target) anlık pozisyonuna ofset ekleyerek istenen konumu bul
+        Vector3 desiredPosition = target.position + offset;
+
+        // Lerping ile hareketi yumuşat
+        Vector3 smoothedPosition = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed);
+
+        // Kamerayı o konuma taşı
+        transform.position = smoothedPosition;
+    }
+}
