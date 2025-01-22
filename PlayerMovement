@@ -1,0 +1,124 @@
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using System.Collections;
+using UnityEngine.UI;
+
+public class PlayerMovement : MonoBehaviour
+{
+    public float moveSpeed = 5f;
+    public float jumpForce = 7f;
+    public LayerMask groundLayer;
+    public Text scoreText;  // ScoreText referansı
+    public int score = 0;
+
+    private Rigidbody2D rb;
+    private Animator animator;
+    private bool isGrounded = true;
+    private bool facingRight = true;
+    private bool isDead = false;
+
+    void Start()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        animator = GetComponent<Animator>();
+        UpdateScoreUI();
+    }
+
+    void Update()
+    {
+        if (!isDead)
+        {
+            Move();
+            Jump();
+            CheckGrounded();
+        }
+        UpdateAnimator();
+    }
+
+    void Move()
+    {
+        float moveHorizontal = Input.GetAxis("Horizontal");
+        Vector3 movement = new Vector3(moveHorizontal, 0f, 0f);
+        transform.position += movement * moveSpeed * Time.deltaTime;
+
+        Flip(moveHorizontal);
+    }
+
+    void Jump()
+    {
+        if (Input.GetButtonDown("Jump") && isGrounded)
+        {
+            rb.AddForce(new Vector2(0f, jumpForce), ForceMode2D.Impulse);
+            isGrounded = false;
+        }
+    }
+
+    void CheckGrounded()
+    {
+        isGrounded = rb.IsTouchingLayers(groundLayer);
+    }
+
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
+        {
+            isGrounded = true;
+        }
+
+        if (collision.gameObject.CompareTag("Mushroom"))
+        {
+            StartCoroutine(DieAndRespawn());
+        }
+
+        if (collision.gameObject.CompareTag("Flower") || collision.gameObject.CompareTag("Crystal"))
+        {
+            score += 10;
+            UpdateScoreUI();
+            Destroy(collision.gameObject);
+        }
+    }
+
+    void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
+        {
+            isGrounded = false;
+        }
+    }
+
+    void Flip(float moveHorizontal)
+    {
+        if (moveHorizontal > 0 && !facingRight)
+        {
+            facingRight = true;
+            transform.Rotate(0f, 180f, 0f);
+        }
+        else if (moveHorizontal < 0 && facingRight)
+        {
+            facingRight = false;
+            transform.Rotate(0f, 180f, 0f);
+        }
+    }
+
+    void UpdateAnimator()
+    {
+        animator.SetFloat("Speed", Mathf.Abs(Input.GetAxis("Horizontal")));
+        animator.SetBool("isGrounded", isGrounded);
+    }
+
+    IEnumerator DieAndRespawn()
+    {
+        animator.SetTrigger("Die");
+        isDead = true;
+        yield return new WaitForSeconds(2);
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    void UpdateScoreUI()
+    {
+        if (scoreText != null)
+        {
+            scoreText.text = "Score: " + score;
+        }
+    }
+}
